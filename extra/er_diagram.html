@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLAP Platform — Star Schema ER Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #13161e;
+    --border:    #1f2433;
+    --gold:      #c9a84c;
+    --gold-dim:  #7a6330;
+    --teal:      #3eb8a0;
+    --teal-dim:  #1e5c52;
+    --rust:      #c45c3a;
+    --muted:     #5a6175;
+    --text:      #e8eaf0;
+    --text-dim:  #8b92a8;
+    --fact-bg:   #161a26;
+    --fact-head: #1d2235;
+    --dim-bg:    #141a18;
+    --dim-head:  #1a2520;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    padding: 48px 32px;
+  }
+
+  /* subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; }
+
+  /* ── Header ── */
+  header { margin-bottom: 56px; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  h1 em { font-style: italic; color: var(--gold); }
+  .subtitle {
+    font-size: 15px;
+    color: var(--text-dim);
+    font-weight: 300;
+    max-width: 560px;
+    line-height: 1.6;
+  }
+
+  /* ── Stats row ── */
+  .stats {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 56px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--gold);
+  }
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .stat-divider {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+  }
+
+  /* ── Diagram ── */
+  .diagram {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 340px 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 0;
+    margin-bottom: 64px;
+  }
+
+  /* ── Table cards ── */
+  .table-card {
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+  }
+  .table-card:hover { border-color: var(--gold-dim); }
+
+  .fact-card {
+    grid-column: 2;
+    grid-row: 2;
+    background: var(--fact-bg);
+    border-color: var(--gold-dim);
+    box-shadow: 0 0 40px rgba(201,168,76,0.08);
+    z-index: 2;
+    align-self: center;
+  }
+
+  .dim-date     { grid-column: 2; grid-row: 1; background: var(--dim-bg); margin-bottom: 0; align-self: end; }
+  .dim-geo      { grid-column: 1; grid-row: 2; background: var(--dim-bg); align-self: center; margin-right: 0; }
+  .dim-product  { grid-column: 3; grid-row: 2; background: var(--dim-bg); align-self: center; margin-left: 0; }
+  .dim-customer { grid-column: 2; grid-row: 3; background: var(--dim-bg); margin-top: 0; align-self: start; }
+
+  .card-header {
+    padding: 12px 16px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .fact-card .card-header  { background: var(--fact-head); border-color: var(--gold-dim); }
+  .table-card:not(.fact-card) .card-header { background: var(--dim-head); }
+
+  .card-icon {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .fact-card  .card-icon { background: rgba(201,168,76,0.15); }
+  .dim-card   .card-icon { background: rgba(62,184,160,0.12); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .fact-card .card-title  { color: var(--gold); }
+  .table-card:not(.fact-card) .card-title { color: var(--teal); }
+
+  .card-badge {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 2px 7px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+  .badge-fact { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid var(--gold-dim); }
+  .badge-dim  { background: rgba(62,184,160,0.08); color: var(--teal); border: 1px solid var(--teal-dim); }
+
+  .card-body { padding: 8px 0; }
+
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 16px;
+    transition: background 0.15s;
+  }
+  .field-row:hover { background: rgba(255,255,255,0.02); }
+
+  .field-icon {
+    font-size: 10px;
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .pk  { color: var(--gold); }
+  .fk  { color: var(--rust); }
+  .col { color: var(--muted); }
+
+  .field-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    flex: 1;
+  }
+  .field-name.pk-name  { color: var(--gold); font-weight: 600; }
+  .field-name.fk-name  { color: var(--rust); }
+
+  .field-type {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .field-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 16px;
+  }
+
+  /* ── SVG connectors ── */
+  .connectors {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /* ── Hierarchy section ── */
+  .hierarchy-section {
+    margin-bottom: 64px;
+  }
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .hierarchies {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .hierarchy-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+  }
+  .hierarchy-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--teal);
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+  .hierarchy-levels {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .h-level {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .h-level + .h-level { margin-top: -1px; border-top-color: transparent; }
+  .h-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .h-dot-1 { background: var(--gold); }
+  .h-dot-2 { background: var(--teal); }
+  .h-dot-3 { background: var(--rust); }
+  .h-dot-4 { background: var(--muted); }
+  .h-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+  }
+  .h-arrow {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 2px 0;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 48px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .legend-icon {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    width: 18px;
+    text-align: center;
+  }
+
+  /* ── Measures section ── */
+  .measures-section { margin-bottom: 48px; }
+  .measures-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+  .measure-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .measure-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--teal);
+    margin-bottom: 4px;
+  }
+  .measure-type {
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: gap;
+  }
+  .footer-left {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .footer-right {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* connector lines drawn with CSS borders on pseudo-elements */
+  .connector-v-top, .connector-v-bottom,
+  .connector-h-left, .connector-h-right {
+    position: absolute;
+    background: var(--gold-dim);
+    z-index: 0;
+  }
+
+  /* relation labels */
+  .relation-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .relation-line {
+    width: 1px;
+    background: linear-gradient(to bottom, var(--border), var(--gold-dim), var(--border));
+    flex: 1;
+    min-height: 24px;
+  }
+  .relation-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--gold-dim);
+    letter-spacing: 0.1em;
+    background: var(--bg);
+    padding: 2px 6px;
+    border: 1px solid var(--gold-dim);
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  /* vertical connector between top/bottom dims and fact */
+  .v-connector {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    gap: 0;
+  }
+  .v-connector-top    { grid-row: 1; justify-content: flex-end; padding-bottom: 0; }
+  .v-connector-bottom { grid-row: 3; justify-content: flex-start; padding-top: 0; }
+
+  /* horizontal connectors */
+  .h-connector {
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    padding: 0;
+  }
+  .h-connector-left  { grid-column: 1; justify-content: flex-end; }
+  .h-connector-right { grid-column: 3; justify-content: flex-start; }
+
+  .h-line {
+    height: 1px;
+    flex: 1;
+    background: linear-gradient(to right, var(--border), var(--gold-dim));
+    min-width: 20px;
+  }
+  .h-line-rev {
+    background: linear-gradient(to left, var(--border), var(--gold-dim));
+  }
+  .v-line {
+    width: 1px;
+    background: linear-gradient(to bottom, var(--gold-dim), var(--border));
+    flex: 1;
+    min-height: 20px;
+  }
+  .v-line-rev {
+    background: linear-gradient(to top, var(--gold-dim), var(--border));
+  }
+  .connector-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 1px solid var(--bg);
+    flex-shrink: 0;
+  }
+  .connector-tick {
+    width: 10px; height: 2px;
+    background: var(--gold-dim);
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 900px) {
+    .diagram { grid-template-columns: 1fr; grid-template-rows: auto; }
+    .fact-card, .dim-date, .dim-geo, .dim-product, .dim-customer { grid-column: 1; grid-row: auto; }
+    .h-connector, .v-connector { display: none; }
+    .hierarchies { grid-template-columns: 1fr; }
+    .measures-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <header>
+    <div class="eyebrow">// entity relationship diagram</div>
+    <h1>Star Schema<br><em>Architecture</em></h1>
+    <p class="subtitle">Dimensional model powering the OLAP Intelligence Platform. A central fact table surrounded by four dimension tables enabling fast multi-dimensional analysis.</p>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-value">5</span>
+      <span class="stat-label">Tables</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-value">4</span>
+      <span class="stat-label">Dimensions</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-value">1</span>
+      <span class="stat-label">Fact Table</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-value">10K</span>
+      <span class="stat-label">Records</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-value">2022–2024</span>
+      <span class="stat-label">Time Range</span>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><span class="legend-icon pk" style="color:var(--gold)">🔑</span> Primary Key</div>
+    <div class="legend-item"><span class="legend-icon fk" style="color:var(--rust)">⇢</span> Foreign Key</div>
+    <div class="legend-item"><span class="legend-icon col" style="color:var(--muted)">·</span> Column</div>
+    <div class="legend-item" style="margin-left:auto">
+      <span style="display:inline-block;width:12px;height:12px;background:rgba(201,168,76,0.2);border:1px solid var(--gold-dim);border-radius:2px;margin-right:6px"></span>
+      Fact Table
+    </div>
+    <div class="legend-item">
+      <span style="display:inline-block;width:12px;height:12px;background:rgba(62,184,160,0.12);border:1px solid var(--teal-dim);border-radius:2px;margin-right:6px"></span>
+      Dimension Table
+    </div>
+  </div>
+
+  <!-- ER Diagram Grid -->
+  <div class="diagram">
+
+    <!-- TOP: dim_date -->
+    <div class="table-card dim-card dim-date">
+      <div class="card-header">
+        <div class="card-icon dim-card">📅</div>
+        <span class="card-title">dim_date</span>
+        <span class="card-badge badge-dim">dimension</span>
+      </div>
+      <div class="card-body">
+        <div class="field-row"><span class="field-icon pk">🔑</span><span class="field-name pk-name">date_key</span><span class="field-type">INTEGER PK</span></div>
+        <div class="field-divider"></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">full_date</span><span class="field-type">TEXT</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">year</span><span class="field-type">INTEGER</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">quarter</span><span class="field-type">TEXT</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">quarter_num</span><span class="field-type">INTEGER</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">month</span><span class="field-type">INTEGER</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">month_name</span><span class="field-type">TEXT</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">week_of_year</span><span class="field-type">INTEGER</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">day_of_week</span><span class="field-type">INTEGER</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">is_weekend</span><span class="field-type">INTEGER</span></div>
+      </div>
+    </div>
+
+    <!-- TOP connector -->
+    <div class="v-connector v-connector-top">
+      <div class="v-line-rev" style="min-height:16px"></div>
+      <div class="connector-dot"></div>
+    </div>
+
+    <!-- LEFT: dim_geography -->
+    <div class="h-connector h-connector-left">
+      <div class="connector-tick"></div>
+      <div class="h-line h-line-rev" style="min-width:32px"></div>
+      <div class="connector-dot"></div>
+    </div>
+
+    <div class="table-card dim-card dim-geo">
+      <div class="card-header">
+        <div class="card-icon dim-card">🌍</div>
+        <span class="card-title">dim_geography</span>
+        <span class="card-badge badge-dim">dimension</span>
+      </div>
+      <div class="card-body">
+        <div class="field-row"><span class="field-icon pk">🔑</span><span class="field-name pk-name">geo_key</span><span class="field-type">INTEGER PK</span></div>
+        <div class="field-divider"></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">region</span><span class="field-type">TEXT</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">country</span><span class="field-type">TEXT</span></div>
+      </div>
+    </div>
+
+    <!-- CENTER: fact_sales -->
+    <div class="table-card fact-card">
+      <div class="card-header">
+        <div class="card-icon">⭐</div>
+        <span class="card-title">fact_sales</span>
+        <span class="card-badge badge-fact">fact table</span>
+      </div>
+      <div class="card-body">
+        <div class="field-row"><span class="field-icon pk">🔑</span><span class="field-name pk-name">sale_id</span><span class="field-type">INTEGER PK</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">order_id</span><span class="field-type">TEXT</span></div>
+        <div class="field-divider"></div>
+        <div class="field-row"><span class="field-icon fk">⇢</span><span class="field-name fk-name">date_key</span><span class="field-type">INTEGER FK</span></div>
+        <div class="field-row"><span class="field-icon fk">⇢</span><span class="field-name fk-name">geo_key</span><span class="field-type">INTEGER FK</span></div>
+        <div class="field-row"><span class="field-icon fk">⇢</span><span class="field-name fk-name">product_key</span><span class="field-type">INTEGER FK</span></div>
+        <div class="field-row"><span class="field-icon fk">⇢</span><span class="field-name fk-name">customer_key</span><span class="field-type">INTEGER FK</span></div>
+        <div class="field-divider"></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">quantity</span><span class="field-type">INTEGER</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">unit_price</span><span class="field-type">REAL</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">revenue</span><span class="field-type">REAL</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">cost</span><span class="field-type">REAL</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">profit</span><span class="field-type">REAL</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">profit_margin</span><span class="field-type">REAL</span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: dim_product -->
+    <div class="h-connector h-connector-right">
+      <div class="connector-dot"></div>
+      <div class="h-line" style="min-width:32px"></div>
+      <div class="connector-tick"></div>
+    </div>
+
+    <div class="table-card dim-card dim-product">
+      <div class="card-header">
+        <div class="card-icon dim-card">📦</div>
+        <span class="card-title">dim_product</span>
+        <span class="card-badge badge-dim">dimension</span>
+      </div>
+      <div class="card-body">
+        <div class="field-row"><span class="field-icon pk">🔑</span><span class="field-name pk-name">product_key</span><span class="field-type">INTEGER PK</span></div>
+        <div class="field-divider"></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">category</span><span class="field-type">TEXT</span></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">subcategory</span><span class="field-type">TEXT</span></div>
+      </div>
+    </div>
+
+    <!-- BOTTOM connector -->
+    <div class="v-connector v-connector-bottom">
+      <div class="connector-dot"></div>
+      <div class="v-line" style="min-height:16px"></div>
+    </div>
+
+    <!-- BOTTOM: dim_customer -->
+    <div class="table-card dim-card dim-customer">
+      <div class="card-header">
+        <div class="card-icon dim-card">👤</div>
+        <span class="card-title">dim_customer</span>
+        <span class="card-badge badge-dim">dimension</span>
+      </div>
+      <div class="card-body">
+        <div class="field-row"><span class="field-icon pk">🔑</span><span class="field-name pk-name">customer_key</span><span class="field-type">INTEGER PK</span></div>
+        <div class="field-divider"></div>
+        <div class="field-row"><span class="field-icon col">·</span><span class="field-name">customer_segment</span><span class="field-type">TEXT</span></div>
+      </div>
+    </div>
+
+  </div><!-- /diagram -->
+
+  <!-- Hierarchies -->
+  <div class="hierarchy-section">
+    <div class="section-label">// dimension hierarchies</div>
+    <div class="hierarchies">
+      <div class="hierarchy-card">
+        <div class="hierarchy-title">⏱ TIME HIERARCHY</div>
+        <div class="hierarchy-levels">
+          <div class="h-level"><div class="h-dot h-dot-1"></div><span class="h-name">Year</span></div>
+          <div class="h-arrow">↓</div>
+          <div class="h-level"><div class="h-dot h-dot-2"></div><span class="h-name">Quarter</span></div>
+          <div class="h-arrow">↓</div>
+          <div class="h-level"><div class="h-dot h-dot-3"></div><span class="h-name">Month</span></div>
+          <div class="h-arrow">↓</div>
+          <div class="h-level"><div class="h-dot h-dot-4"></div><span class="h-name">Day</span></div>
+        </div>
+      </div>
+      <div class="hierarchy-card">
+        <div class="hierarchy-title">🌍 GEOGRAPHY HIERARCHY</div>
+        <div class="hierarchy-levels">
+          <div class="h-level"><div class="h-dot h-dot-1"></div><span class="h-name">Region</span></div>
+          <div class="h-arrow">↓</div>
+          <div class="h-level"><div class="h-dot h-dot-2"></div><span class="h-name">Country</span></div>
+        </div>
+      </div>
+      <div class="hierarchy-card">
+        <div class="hierarchy-title">📦 PRODUCT HIERARCHY</div>
+        <div class="hierarchy-levels">
+          <div class="h-level"><div class="h-dot h-dot-1"></div><span class="h-name">Category</span></div>
+          <div class="h-arrow">↓</div>
+          <div class="h-level"><div class="h-dot h-dot-2"></div><span class="h-name">Subcategory</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Measures -->
+  <div class="measures-section">
+    <div class="section-label">// fact table measures</div>
+    <div class="measures-grid">
+      <div class="measure-card"><div class="measure-name">quantity</div><div class="measure-type">INTEGER — units sold</div></div>
+      <div class="measure-card"><div class="measure-name">unit_price</div><div class="measure-type">REAL — price per unit ($)</div></div>
+      <div class="measure-card"><div class="measure-name">revenue</div><div class="measure-name" style="color:var(--gold);font-size:9px">qty × unit_price</div><div class="measure-type">REAL ($)</div></div>
+      <div class="measure-card"><div class="measure-name">cost</div><div class="measure-type">REAL — COGS ($)</div></div>
+      <div class="measure-card"><div class="measure-name">profit</div><div class="measure-name" style="color:var(--gold);font-size:9px">revenue − cost</div><div class="measure-type">REAL ($)</div></div>
+      <div class="measure-card"><div class="measure-name">profit_margin</div><div class="measure-name" style="color:var(--gold);font-size:9px">profit / revenue %</div><div class="measure-type">REAL (%)</div></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-left">OLAP INTELLIGENCE PLATFORM · TIER 3: ARCHITECT · STAR SCHEMA v1.0</div>
+    <div class="footer-right">SQLite · PostgreSQL · DuckDB compatible</div>
+  </footer>
+
+</div>
+</body>
+</html>

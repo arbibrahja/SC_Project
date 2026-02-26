@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLAP Platform — Agent Specifications</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0f14; --surface: #13161e; --surface2: #181c27;
+  --border: #1f2433; --border2: #252c3d;
+  --gold: #c9a84c; --gold-dim: #7a6330; --gold-faint: rgba(201,168,76,0.08);
+  --teal: #3eb8a0; --teal-dim: #1e5c52; --teal-faint: rgba(62,184,160,0.08);
+  --rust: #c45c3a; --rust-faint: rgba(196,92,58,0.08);
+  --blue: #5b8cdb; --blue-faint: rgba(91,140,219,0.08);
+  --purple: #9b72db; --purple-faint: rgba(155,114,219,0.08);
+  --green: #5db87a; --green-faint: rgba(93,184,122,0.08);
+  --muted: #4a5168; --text: #e2e4ec; --text-dim: #7a8099;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(201,168,76,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
+
+/* ── Layout ── */
+.layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 32px 0;
+  position: sticky; top: 0; height: 100vh;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 0 24px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.sidebar-logo .logo-mark {
+  width: 32px; height: 32px;
+  background: var(--gold-faint);
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; margin-bottom: 10px;
+}
+.sidebar-logo .logo-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; font-weight: 600;
+  color: var(--text); letter-spacing: 0.06em;
+}
+.sidebar-logo .logo-sub {
+  font-size: 10px; color: var(--muted);
+  margin-top: 2px; letter-spacing: 0.05em;
+}
+.sidebar-section {
+  padding: 0 16px;
+  margin-bottom: 8px;
+}
+.sidebar-section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 0.2em;
+  color: var(--muted); text-transform: uppercase;
+  padding: 4px 8px 8px;
+}
+.sidebar-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 4px;
+  text-decoration: none; color: var(--text-dim);
+  font-size: 13px; transition: all 0.15s;
+  cursor: pointer; border: none; background: none; width: 100%;
+  text-align: left;
+}
+.sidebar-link:hover { background: var(--surface2); color: var(--text); }
+.sidebar-link.active { background: var(--gold-faint); color: var(--gold); }
+.sidebar-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.sidebar-badge {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; padding: 1px 6px;
+  border-radius: 10px; letter-spacing: 0.05em;
+}
+
+/* ── Main content ── */
+.main { flex: 1; padding: 48px 64px; max-width: 960px; }
+
+/* ── Page header ── */
+.page-header { margin-bottom: 56px; }
+.eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.2em;
+  color: var(--gold); margin-bottom: 12px;
+}
+h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 400; line-height: 1.1;
+  margin-bottom: 16px;
+}
+h1 em { font-style: italic; color: var(--gold); }
+.page-desc { font-size: 15px; color: var(--text-dim); max-width: 600px; line-height: 1.7; }
+
+/* ── Overview table ── */
+.overview-table {
+  width: 100%; border-collapse: collapse;
+  margin-bottom: 64px;
+  border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+}
+.overview-table th {
+  background: var(--surface);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.15em;
+  color: var(--muted); text-transform: uppercase;
+  padding: 12px 16px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.overview-table td {
+  padding: 14px 16px; font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.overview-table tr:last-child td { border-bottom: none; }
+.overview-table tr:hover td { background: rgba(255,255,255,0.01); }
+.agent-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--muted);
+}
+.agent-name-cell {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 600;
+}
+.tier-badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; padding: 2px 8px;
+  border-radius: 2px; letter-spacing: 0.1em;
+}
+.req { background: var(--gold-faint); color: var(--gold); border: 1px solid var(--gold-dim); }
+.opt { background: var(--teal-faint); color: var(--teal); border: 1px solid var(--teal-dim); }
+
+/* ── Section headers ── */
+.section-divider {
+  display: flex; align-items: center; gap: 16px;
+  margin: 64px 0 32px;
+}
+.section-divider-line { flex: 1; height: 1px; background: var(--border); }
+.section-divider-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.2em;
+  color: var(--muted); text-transform: uppercase; white-space: nowrap;
+}
+
+/* ── Agent cards ── */
+.agent-card {
+  border: 1px solid var(--border);
+  border-radius: 6px; overflow: hidden;
+  margin-bottom: 40px;
+  background: var(--surface);
+}
+.agent-header {
+  padding: 20px 24px;
+  display: flex; align-items: flex-start; gap: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.agent-icon {
+  width: 44px; height: 44px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.agent-header-text { flex: 1; }
+.agent-header-top {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+}
+.agent-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 15px; font-weight: 600; color: var(--text);
+}
+.agent-desc { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+
+.agent-body { padding: 0; }
+
+.spec-section {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.spec-section:last-child { border-bottom: none; }
+.spec-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.15em;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+/* ── Operations grid ── */
+.ops-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.op-card {
+  padding: 12px 14px;
+  border-radius: 4px; border: 1px solid var(--border2);
+  background: var(--surface2);
+}
+.op-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 600; margin-bottom: 4px;
+}
+.op-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+/* ── I/O tables ── */
+.io-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+}
+.io-table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  color: var(--muted); text-transform: uppercase;
+  padding: 8px 12px; text-align: left;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.01);
+}
+.io-table td {
+  padding: 9px 12px; border-bottom: 1px solid var(--border);
+  vertical-align: top; line-height: 1.5;
+}
+.io-table tr:last-child td { border-bottom: none; }
+.io-table .field { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--teal); }
+.io-table .type  { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
+.io-table .req-mark { color: var(--rust); font-size: 10px; }
+
+/* ── Code blocks ── */
+.code-block {
+  background: #0a0c10;
+  border: 1px solid var(--border);
+  border-radius: 4px; padding: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; line-height: 1.8;
+  color: #a8b2c8; overflow-x: auto;
+  white-space: pre;
+}
+.code-comment { color: var(--muted); }
+.code-key     { color: var(--teal); }
+.code-val     { color: #d4a96a; }
+.code-str     { color: #98c379; }
+.code-kw      { color: var(--blue); }
+
+/* ── Example queries ── */
+.examples { display: flex; flex-direction: column; gap: 8px; }
+.example {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 4px;
+}
+.example-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+.example-text { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+.example-text strong { color: var(--text); font-weight: 500; }
+
+/* ── Flow diagram ── */
+.flow {
+  display: flex; align-items: center; gap: 0;
+  flex-wrap: nowrap; overflow-x: auto;
+  padding-bottom: 4px;
+}
+.flow-step {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 4px; padding: 10px 14px;
+  font-size: 12px; white-space: nowrap; flex-shrink: 0;
+}
+.flow-step .step-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 0.1em; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 3px;
+}
+.flow-step .step-value { font-weight: 500; }
+.flow-arrow {
+  color: var(--muted); font-size: 18px; padding: 0 8px; flex-shrink: 0;
+}
+
+/* ── Orchestrator diagram ── */
+.orch-diagram {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 24px;
+}
+.orch-center {
+  background: var(--gold-faint); border: 1px solid var(--gold-dim);
+  border-radius: 6px; padding: 16px 20px; margin-bottom: 20px;
+  text-align: center;
+}
+.orch-center-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px; font-weight: 600; color: var(--gold);
+}
+.orch-center-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+.orch-agents {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.orch-agent {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 4px; padding: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; text-align: center;
+}
+.orch-connector {
+  text-align: center; color: var(--muted); font-size: 18px; padding: 8px 0;
+}
+
+/* Colors per agent */
+.c1 { color: var(--gold); }    .b1 { background: var(--gold-faint); border-color: var(--gold-dim); }
+.c2 { color: var(--teal); }    .b2 { background: var(--teal-faint); border-color: var(--teal-dim); }
+.c3 { color: var(--blue); }    .b3 { background: var(--blue-faint); border-color: #2d4a7a; }
+.c4 { color: var(--rust); }    .b4 { background: var(--rust-faint); border-color: #6a3020; }
+.c5 { color: var(--purple); }  .b5 { background: var(--purple-faint); border-color: #4a3070; }
+.c6 { color: var(--green); }   .b6 { background: var(--green-faint); border-color: #2a5a3a; }
+
+.tag {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 2px; margin: 2px;
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">⭐</div>
+    <div class="logo-title">OLAP PLATFORM</div>
+    <div class="logo-sub">Agent Specifications</div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Overview</div>
+    <a class="sidebar-link active" href="#overview">
+      <span class="sidebar-dot" style="background:var(--gold)"></span> Overview
+    </a>
+    <a class="sidebar-link" href="#orchestrator">
+      <span class="sidebar-dot" style="background:var(--muted)"></span> Orchestrator
+    </a>
+  </div>
+  <div class="sidebar-section" style="margin-top:16px">
+    <div class="sidebar-section-label">Required Agents</div>
+    <a class="sidebar-link" href="#agent1">
+      <span class="sidebar-dot" style="background:var(--gold)"></span> DimensionNavigator
+      <span class="sidebar-badge req">1</span>
+    </a>
+    <a class="sidebar-link" href="#agent2">
+      <span class="sidebar-dot" style="background:var(--teal)"></span> CubeOperations
+      <span class="sidebar-badge req">2</span>
+    </a>
+    <a class="sidebar-link" href="#agent3">
+      <span class="sidebar-dot" style="background:var(--blue)"></span> KPICalculator
+      <span class="sidebar-badge req">3</span>
+    </a>
+    <a class="sidebar-link" href="#agent4">
+      <span class="sidebar-dot" style="background:var(--rust)"></span> ReportGenerator
+      <span class="sidebar-badge req">4</span>
+    </a>
+  </div>
+  <div class="sidebar-section" style="margin-top:16px">
+    <div class="sidebar-section-label">Optional Agents</div>
+    <a class="sidebar-link" href="#agent5">
+      <span class="sidebar-dot" style="background:var(--purple)"></span> Visualization
+      <span class="sidebar-badge opt">5</span>
+    </a>
+    <a class="sidebar-link" href="#agent6">
+      <span class="sidebar-dot" style="background:var(--green)"></span> AnomalyDetection
+      <span class="sidebar-badge opt">6</span>
+    </a>
+  </div>
+</nav>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Header -->
+  <div class="page-header" id="overview">
+    <div class="eyebrow">// agent specifications</div>
+    <h1>Multi-Agent<br><em>System Design</em></h1>
+    <p class="page-desc">Complete specifications for all 6 AI agents in the OLAP Intelligence Platform. Each agent encapsulates a specific OLAP capability and communicates through a standardised AgentInput → AgentOutput interface.</p>
+  </div>
+
+  <!-- Overview table -->
+  <table class="overview-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Agent</th>
+        <th>Type</th>
+        <th>Operations</th>
+        <th>OLAP Category</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="agent-num">01</td>
+        <td class="agent-name-cell c1">DimensionNavigator</td>
+        <td><span class="tier-badge req">Required</span></td>
+        <td>drill_down, roll_up, group</td>
+        <td>Hierarchy Navigation</td>
+      </tr>
+      <tr>
+        <td class="agent-num">02</td>
+        <td class="agent-name-cell c2">CubeOperations</td>
+        <td><span class="tier-badge req">Required</span></td>
+        <td>slice, dice, pivot, drill_through</td>
+        <td>Cube Manipulation</td>
+      </tr>
+      <tr>
+        <td class="agent-num">03</td>
+        <td class="agent-name-cell c3">KPICalculator</td>
+        <td><span class="tier-badge req">Required</span></td>
+        <td>yoy_growth, mom_change, compare_periods, top_n, profit_margins, summary</td>
+        <td>Business KPIs</td>
+      </tr>
+      <tr>
+        <td class="agent-num">04</td>
+        <td class="agent-name-cell c4">ReportGenerator</td>
+        <td><span class="tier-badge req">Required</span></td>
+        <td>executive_summary, trend_report, format_table</td>
+        <td>Output Formatting</td>
+      </tr>
+      <tr>
+        <td class="agent-num">05</td>
+        <td class="agent-name-cell c5">Visualization</td>
+        <td><span class="tier-badge opt">Optional</span></td>
+        <td>visualize</td>
+        <td>Chart Selection</td>
+      </tr>
+      <tr>
+        <td class="agent-num">06</td>
+        <td class="agent-name-cell c6">AnomalyDetection</td>
+        <td><span class="tier-badge opt">Optional</span></td>
+        <td>monthly_anomaly, product_anomaly</td>
+        <td>Statistical Analysis</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Shared interface -->
+  <div class="section-divider" id="orchestrator">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-label">// shared interface</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="agent-card" style="margin-bottom:48px">
+    <div class="agent-header">
+      <div class="agent-icon" style="background:var(--gold-faint);border:1px solid var(--gold-dim)">🔀</div>
+      <div class="agent-header-text">
+        <div class="agent-header-top">
+          <span class="agent-title">Planner / Orchestrator</span>
+        </div>
+        <p class="agent-desc">The "brain" of the system. Receives natural language queries, calls the Claude API to produce a JSON execution plan, routes work to appropriate agents in sequence, aggregates results, and generates a narrative response with follow-up suggestions.</p>
+      </div>
+    </div>
+    <div class="agent-body">
+      <div class="spec-section">
+        <div class="spec-label">Responsibilities</div>
+        <div class="ops-grid">
+          <div class="op-card">
+            <div class="op-name" style="color:var(--gold)">Query Understanding</div>
+            <div class="op-desc">Parses natural language, identifies intent and OLAP operation type</div>
+          </div>
+          <div class="op-card">
+            <div class="op-name" style="color:var(--gold)">Agent Selection</div>
+            <div class="op-desc">Maps query type to the correct agent(s)</div>
+          </div>
+          <div class="op-card">
+            <div class="op-name" style="color:var(--gold)">Coordination</div>
+            <div class="op-desc">Passes context between agents, aggregates outputs</div>
+          </div>
+          <div class="op-card">
+            <div class="op-name" style="color:var(--gold)">Context Management</div>
+            <div class="op-desc">6-turn sliding window conversation history for follow-ups</div>
+          </div>
+          <div class="op-card">
+            <div class="op-name" style="color:var(--gold)">Fallback Planning</div>
+            <div class="op-desc">Rule-based keyword planner when Claude API is unavailable</div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">LLM Prompt</div>
+        <div class="code-block"><span class="code-comment">// System prompt sent to claude-sonnet-4-6</span>
+<span class="code-str">You are an OLAP query planner for a retail sales database.
+Given a user question, produce a JSON execution plan.
+
+Available agents: DimensionNavigator, CubeOperations,
+KPICalculator, ReportGenerator, Visualization, AnomalyDetection
+
+Available operations per agent:
+- DimensionNavigator: drill_down, roll_up, group
+- CubeOperations: slice, dice, pivot, drill_through
+- KPICalculator: yoy_growth, mom_change, compare_periods, top_n, profit_margins
+- ReportGenerator: executive_summary, trend_report, format_table
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "steps": [
+    {
+      "agent": "AgentName",
+      "operation": "operation_name",
+      "parameters": { ... }
+    }
+  ],
+  "narrative_hint": "Brief description of what the plan does"
+}</span></div>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Example Orchestration Flow</div>
+        <div class="flow">
+          <div class="flow-step">
+            <div class="step-label">User Query</div>
+            <div class="step-value">"Compare Q3 vs Q4 2024 by region, drill into top"</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="step-label">Claude API</div>
+            <div class="step-value">Produces JSON execution plan</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="step-label">Step 1</div>
+            <div class="step-value">KPICalc: compare_periods</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="step-label">Step 2</div>
+            <div class="step-value">DimNav: drill_down</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="step-label">Step 3</div>
+            <div class="step-value">ReportGen: executive_summary</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent 1 -->
+  <div class="section-divider"><div class="section-divider-line"></div><div class="section-divider-label">// required agents</div><div class="section-divider-line"></div></div>
+
+  <div class="agent-card" id="agent1">
+    <div class="agent-header" style="background:var(--gold-faint);border-bottom-color:var(--gold-dim)">
+      <div class="agent-icon b1">🗂️</div>
+      <div class="agent-header-text">
+        <div class="agent-header-top">
+          <span class="agent-title c1">DimensionNavigator</span>
+          <span class="tier-badge req">Agent 1 — Required</span>
+        </div>
+        <p class="agent-desc">Navigates dimensional hierarchies across Time (Year→Quarter→Month), Geography (Region→Country), and Product (Category→Subcategory). Enables progressive exploration from summary to detail and back.</p>
+      </div>
+    </div>
+    <div class="agent-body">
+      <div class="spec-section">
+        <div class="spec-label">Operations</div>
+        <div class="ops-grid">
+          <div class="op-card">
+            <div class="op-name c1">drill_down</div>
+            <div class="op-desc">Navigate from a higher level to a more detailed level within a hierarchy</div>
+          </div>
+          <div class="op-card">
+            <div class="op-name c1">roll_up</div>
+            <div class="op-desc">Aggregate from detail to a higher summary level</div>
+          </div>
+          <div class="op-card">
+            <div class="op-name c1">group</div>
+            <div class="op-desc">Group-by on any combination of dimensions with full measures</div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Input Schema (AgentInput)</div>
+        <table class="io-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="field">operation</td><td class="type">string</td><td class="req-mark">✱</td><td>drill_down | roll_up | group</td></tr>
+            <tr><td class="field">parameters.hierarchy</td><td class="type">string</td><td></td><td>"time" | "geography" | "product" (default: "time")</td></tr>
+            <tr><td class="field">parameters.to_level</td><td class="type">string</td><td></td><td>Target level: "quarter", "country", "subcategory"</td></tr>
+            <tr><td class="field">parameters.filters</td><td class="type">object</td><td></td><td>e.g. {"year": 2024, "region": "Europe"}</td></tr>
+            <tr><td class="field">parameters.dimensions</td><td class="type">array</td><td></td><td>For group operation: ["region", "category"]</td></tr>
+            <tr><td class="field">context</td><td class="type">string</td><td></td><td>Original user query for narrative generation</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Output Fields (AgentOutput)</div>
+        <table class="io-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="field">data</td><td>DataFrame with dimension columns + total_revenue, total_profit, avg_margin, total_qty, transactions</td></tr>
+            <tr><td class="field">summary</td><td>e.g. "Drill-down on time to 'quarter' level. 4 rows. Top: Q4 with $1,784,320 revenue."</td></tr>
+            <tr><td class="field">metadata.hierarchy</td><td>Hierarchy navigated</td></tr>
+            <tr><td class="field">metadata.level</td><td>Resulting level reached</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Example Natural Language Triggers</div>
+        <div class="examples">
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Break down 2024 revenue by quarter</strong>" → drill_down time to quarter, filter year=2024</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Show quarterly totals as a yearly summary</strong>" → roll_up time to year</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Drill into Europe by country</strong>" → drill_down geography to country, filter region=Europe</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Revenue by region and category</strong>" → group dimensions=[region, category]</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent 2 -->
+  <div class="agent-card" id="agent2">
+    <div class="agent-header" style="background:var(--teal-faint);border-bottom-color:var(--teal-dim)">
+      <div class="agent-icon b2">🎲</div>
+      <div class="agent-header-text">
+        <div class="agent-header-top">
+          <span class="agent-title c2">CubeOperations</span>
+          <span class="tier-badge req">Agent 2 — Required</span>
+        </div>
+        <p class="agent-desc">Performs classical OLAP cube manipulations. Slice applies a single-dimension filter, Dice applies multi-dimension filters, Pivot reshapes dimensions into columns, and Drill-Through exposes the raw underlying transactions.</p>
+      </div>
+    </div>
+    <div class="agent-body">
+      <div class="spec-section">
+        <div class="spec-label">Operations</div>
+        <div class="ops-grid">
+          <div class="op-card"><div class="op-name c2">slice</div><div class="op-desc">Fix one dimension value, group by another — e.g. "only 2024"</div></div>
+          <div class="op-card"><div class="op-name c2">dice</div><div class="op-desc">Filter multiple dimensions simultaneously — e.g. "Electronics in Europe"</div></div>
+          <div class="op-card"><div class="op-name c2">pivot</div><div class="op-desc">Rotate view: row_dim × col_dim matrix of a measure</div></div>
+          <div class="op-card"><div class="op-name c2">drill_through</div><div class="op-desc">Return actual transaction records (not aggregated)</div></div>
+        </div>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Input Schema (AgentInput)</div>
+        <table class="io-table">
+          <thead><tr><th>Operation</th><th>Key Parameters</th></tr></thead>
+          <tbody>
+            <tr><td class="field">slice</td><td>filter: {"year": 2024}, group_by: ["region"]</td></tr>
+            <tr><td class="field">dice</td><td>filters: {"year": 2024, "region": "Europe", "category": "Electronics"}, group_by: ["country"]</td></tr>
+            <tr><td class="field">pivot</td><td>row_dim: "region", col_dim: "year", measure: "revenue", filters: {}</td></tr>
+            <tr><td class="field">drill_through</td><td>filters: {...}, limit: 50 (default)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Supported Dimension Filter Keys</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+          <span class="tag b2 c2">year</span><span class="tag b2 c2">quarter</span><span class="tag b2 c2">month</span>
+          <span class="tag b2 c2">region</span><span class="tag b2 c2">country</span>
+          <span class="tag b2 c2">category</span><span class="tag b2 c2">subcategory</span>
+          <span class="tag b2 c2">customer_segment</span>
+        </div>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Example Natural Language Triggers</div>
+        <div class="examples">
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Show only 2024 sales by region</strong>" → slice filter={year:2024} group_by=[region]</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Electronics in Europe</strong>" → dice filters={category:Electronics, region:Europe}</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Revenue matrix: regions vs years</strong>" → pivot row_dim=region, col_dim=year, measure=revenue</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Show me the actual transactions from Q4</strong>" → drill_through filters={quarter:Q4}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent 3 -->
+  <div class="agent-card" id="agent3">
+    <div class="agent-header" style="background:var(--blue-faint);border-bottom-color:#2d4a7a">
+      <div class="agent-icon b3">📊</div>
+      <div class="agent-header-text">
+        <div class="agent-header-top">
+          <span class="agent-title c3">KPICalculator</span>
+          <span class="tier-badge req">Agent 3 — Required</span>
+        </div>
+        <p class="agent-desc">Computes business KPIs including year-over-year growth, month-over-month change, period comparisons, profit margin analysis, and Top-N rankings. The most frequently used agent for business intelligence queries.</p>
+      </div>
+    </div>
+    <div class="agent-body">
+      <div class="spec-section">
+        <div class="spec-label">Operations</div>
+        <div class="ops-grid">
+          <div class="op-card"><div class="op-name c3">yoy_growth</div><div class="op-desc">Year-over-year revenue growth % by any dimension</div></div>
+          <div class="op-card"><div class="op-name c3">mom_change</div><div class="op-desc">Month-over-month revenue change for a given year</div></div>
+          <div class="op-card"><div class="op-name c3">compare_periods</div><div class="op-desc">Side-by-side comparison of two time periods</div></div>
+          <div class="op-card"><div class="op-name c3">top_n</div><div class="op-desc">Top N performers by any dimension and measure</div></div>
+          <div class="op-card"><div class="op-name c3">profit_margins</div><div class="op-desc">Margin analysis: avg and blended margin by dimension</div></div>
+          <div class="op-card"><div class="op-name c3">summary</div><div class="op-desc">Overall KPI dashboard: revenue, profit, margin, AOV</div></div>
+        </div>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Input Schema (AgentInput)</div>
+        <table class="io-table">
+          <thead><tr><th>Operation</th><th>Key Parameters</th></tr></thead>
+          <tbody>
+            <tr><td class="field">yoy_growth</td><td>dimension: "region"|"category"|null, filters: {}</td></tr>
+            <tr><td class="field">mom_change</td><td>year: 2024 (optional)</td></tr>
+            <tr><td class="field">compare_periods</td><td>period_a: {"year":2023}, period_b: {"year":2024}, group_by: "region"|null</td></tr>
+            <tr><td class="field">top_n</td><td>n: 5, dimension: "country"|"category"|..., measure: "profit"|"revenue"|"profit_margin"</td></tr>
+            <tr><td class="field">profit_margins</td><td>dimension: "category", filters: {}</td></tr>
+            <tr><td class="field">summary</td><td>(no parameters required)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Output — yoy_growth example</div>
+        <div class="code-block"><span class="code-comment">// DataFrame columns</span>
+<span class="code-key">dimension</span>  <span class="code-val">year</span>  <span class="code-val">total_revenue</span>  <span class="code-val">yoy_growth_pct</span>
+Asia Pacific  2022   4,821,043       null
+Asia Pacific  2023   5,012,384       +3.97%
+Asia Pacific  2024   5,312,201       +5.98%</div>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Example Natural Language Triggers</div>
+        <div class="examples">
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Compare 2023 vs 2024 by region</strong>" → compare_periods period_a={year:2023}, period_b={year:2024}, group_by=region</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Top 5 countries by profit</strong>" → top_n n=5, dimension=country, measure=profit</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Which category grew fastest YoY?</strong>" → yoy_growth dimension=category</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Monthly trend for 2024</strong>" → mom_change year=2024</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent 4 -->
+  <div class="agent-card" id="agent4">
+    <div class="agent-header" style="background:var(--rust-faint);border-bottom-color:#6a3020">
+      <div class="agent-icon b4">📝</div>
+      <div class="agent-header-text">
+        <div class="agent-header-top">
+          <span class="agent-title c4">ReportGenerator</span>
+          <span class="tier-badge req">Agent 4 — Required</span>
+        </div>
+        <p class="agent-desc">Formats raw OLAP outputs into polished deliverables. Produces formatted tables with totals rows, monthly trend reports, and executive narrative summaries combining headline KPIs with top region and category insights.</p>
+      </div>
+    </div>
+    <div class="agent-body">
+      <div class="spec-section">
+        <div class="spec-label">Operations</div>
+        <div class="ops-grid">
+          <div class="op-card"><div class="op-name c4">executive_summary</div><div class="op-desc">Natural-language narrative with KPIs, top region, top category, and YoY growth</div></div>
+          <div class="op-card"><div class="op-name c4">trend_report</div><div class="op-desc">Monthly revenue trend for a year, optionally broken by dimension</div></div>
+          <div class="op-card"><div class="op-name c4">format_table</div><div class="op-desc">Adds TOTAL row, rank column, and conditional formatting hints to any dataset</div></div>
+        </div>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Input Schema (AgentInput)</div>
+        <table class="io-table">
+          <thead><tr><th>Operation</th><th>Key Parameters</th></tr></thead>
+          <tbody>
+            <tr><td class="field">executive_summary</td><td>focus: "overall"|"regional"|"product"|"time", year: 2024 (optional)</td></tr>
+            <tr><td class="field">trend_report</td><td>year: 2024, dimension: "region"|"category"|null</td></tr>
+            <tr><td class="field">format_table</td><td>data: [...records], add_total: true, add_rank: false, currency_cols: [...]</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Executive Summary Output Example</div>
+        <div class="code-block"><span class="code-comment">## Executive Summary — 2024</span>
+
+<span class="code-str">Revenue:</span> $6,514,780.60 across 3,312 transactions.
+<span class="code-str">Profit:</span> $2,562,310.40 | <span class="code-str">Avg Margin:</span> 39.31% | <span class="code-str">Avg Order:</span> $1,967.20
+
+Revenue grew +6.3% from 2023 ($6,128,432) to 2024 ($6,514,781).
+
+<span class="code-str">Top Region:</span> Asia Pacific ($1,680,234)
+<span class="code-str">Top Category:</span> Electronics ($2,104,320, 41.2% margin)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Optional agents header -->
+  <div class="section-divider"><div class="section-divider-line"></div><div class="section-divider-label">// optional agents (A+ grade)</div><div class="section-divider-line"></div></div>
+
+  <!-- Agent 5 -->
+  <div class="agent-card" id="agent5">
+    <div class="agent-header" style="background:var(--purple-faint);border-bottom-color:#4a3070">
+      <div class="agent-icon b5">📈</div>
+      <div class="agent-header-text">
+        <div class="agent-header-top">
+          <span class="agent-title c5">Visualization</span>
+          <span class="tier-badge opt">Agent 5 — Optional</span>
+        </div>
+        <p class="agent-desc">Selects the most appropriate chart type for a given OLAP result using rule-based heuristics, then builds a complete Plotly-compatible JSON configuration ready for frontend rendering.</p>
+      </div>
+    </div>
+    <div class="agent-body">
+      <div class="spec-section">
+        <div class="spec-label">Chart Selection Rules</div>
+        <table class="io-table">
+          <thead><tr><th>Source Operation</th><th>Recommended Chart</th><th>Rationale</th></tr></thead>
+          <tbody>
+            <tr><td class="field">trend, mom_change</td><td>line</td><td>Time series, continuity matters</td></tr>
+            <tr><td class="field">yoy_growth, top_n, slice, dice</td><td>bar</td><td>Categorical comparison</td></tr>
+            <tr><td class="field">compare_periods</td><td>grouped_bar</td><td>Side-by-side period comparison</td></tr>
+            <tr><td class="field">pivot</td><td>heatmap</td><td>Matrix data — two dimensions</td></tr>
+            <tr><td class="field">≤5 rows, 1 numeric col</td><td>pie</td><td>Part-to-whole proportions</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Input Parameters</div>
+        <table class="io-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="field">data</td><td class="type">array</td><td>Records from prior agent output</td></tr>
+            <tr><td class="field">source_operation</td><td class="type">string</td><td>Operation that produced the data (for chart selection)</td></tr>
+            <tr><td class="field">title</td><td class="type">string</td><td>Chart title</td></tr>
+            <tr><td class="field">x_col</td><td class="type">string</td><td>Override X-axis column (optional)</td></tr>
+            <tr><td class="field">y_col</td><td class="type">string</td><td>Override Y-axis column (optional)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Output — metadata.chart_config</div>
+        <div class="code-block">{
+  <span class="code-key">"chart_type"</span>: <span class="code-str">"bar"</span>,
+  <span class="code-key">"title"</span>: <span class="code-str">"Revenue by Region"</span>,
+  <span class="code-key">"plotly"</span>: {
+    <span class="code-key">"data"</span>: [{ <span class="code-key">"type"</span>: <span class="code-str">"bar"</span>, <span class="code-key">"x"</span>: [<span class="code-str">"Asia Pacific"</span>, ...], <span class="code-key">"y"</span>: [5012384, ...] }],
+    <span class="code-key">"layout"</span>: { <span class="code-key">"title"</span>: <span class="code-str">"Revenue by Region"</span>, <span class="code-key">"template"</span>: <span class="code-str">"plotly_white"</span> }
+  }
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent 6 -->
+  <div class="agent-card" id="agent6">
+    <div class="agent-header" style="background:var(--green-faint);border-bottom-color:#2a5a3a">
+      <div class="agent-icon b6">🔍</div>
+      <div class="agent-header-text">
+        <div class="agent-header-top">
+          <span class="agent-title c6">AnomalyDetection</span>
+          <span class="tier-badge opt">Agent 6 — Optional</span>
+        </div>
+        <p class="agent-desc">Applies statistical methods to identify unusual patterns in sales data. Uses Z-score for time-series anomalies (flagging months with revenue 2+ standard deviations from the mean) and IQR for product margin outliers.</p>
+      </div>
+    </div>
+    <div class="agent-body">
+      <div class="spec-section">
+        <div class="spec-label">Operations & Statistical Methods</div>
+        <div class="ops-grid">
+          <div class="op-card">
+            <div class="op-name c6">monthly_anomaly</div>
+            <div class="op-desc"><strong>Z-score method.</strong> Flags months where |Z| &gt; 2.0. Computes mean and std across all months.</div>
+          </div>
+          <div class="op-card">
+            <div class="op-name c6">product_anomaly</div>
+            <div class="op-desc"><strong>IQR method.</strong> Flags subcategories outside Q1 − 1.5×IQR or Q3 + 1.5×IQR margin range.</div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Output Columns — monthly_anomaly</div>
+        <table class="io-table">
+          <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="field">year, month, month_name</td><td class="type">int/str</td><td>Time dimensions</td></tr>
+            <tr><td class="field">monthly_revenue</td><td class="type">float</td><td>Total revenue for the month</td></tr>
+            <tr><td class="field">z_score</td><td class="type">float</td><td>Standard deviations from mean. |z|&gt;2 = anomaly</td></tr>
+            <tr><td class="field">anomaly</td><td class="type">bool</td><td>True if flagged as anomalous</td></tr>
+            <tr><td class="field">anomaly_type</td><td class="type">string</td><td>"High" | "Low" | "Normal"</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="spec-section">
+        <div class="spec-label">Example Natural Language Triggers</div>
+        <div class="examples">
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Detect revenue anomalies</strong>" → monthly_anomaly</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Are there any unusual months?</strong>" → monthly_anomaly</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Which products have abnormal margins?</strong>" → product_anomaly</span></div>
+          <div class="example"><span class="example-icon">💬</span><span class="example-text">"<strong>Find outliers in profit margins</strong>" → product_anomaly</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="border-top:1px solid var(--border);padding-top:24px;margin-top:32px;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em">
+      OLAP INTELLIGENCE PLATFORM · TIER 3: ARCHITECT · 6 AGENTS
+    </div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">
+      LLM: claude-sonnet-4-6 · DB: SQLite Star Schema
+    </div>
+  </div>
+
+</main>
+</div>
+</body>
+</html>

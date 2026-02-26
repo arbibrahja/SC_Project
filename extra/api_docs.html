@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OLAP Platform — API Documentation</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css">
+  <style>
+    body { margin: 0; background: #0d0f14; }
+    .swagger-ui { font-family: 'Segoe UI', sans-serif; }
+    .swagger-ui .topbar { background: #13161e; border-bottom: 1px solid #1f2433; padding: 12px 0; }
+    .swagger-ui .topbar .download-url-wrapper { display: none; }
+    .swagger-ui .info { margin: 32px 0 24px; }
+    .swagger-ui .info .title { color: #e8eaf0; font-size: 28px; }
+    .swagger-ui .info p, .swagger-ui .info li { color: #8b92a8; }
+    .swagger-ui .scheme-container { background: #13161e; box-shadow: none; border-bottom: 1px solid #1f2433; }
+    #swagger-ui { max-width: 1100px; margin: 0 auto; padding: 0 24px 64px; }
+    .custom-header {
+      background: #13161e;
+      border-bottom: 1px solid #1f2433;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      max-width: 100%;
+    }
+    .custom-header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo {
+      width: 36px; height: 36px;
+      background: rgba(201,168,76,0.15);
+      border: 1px solid #7a6330;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .header-title {
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: #e8eaf0;
+    }
+    .header-sub {
+      font-size: 12px;
+      color: #5a6175;
+      margin-top: 2px;
+    }
+    .header-badge {
+      margin-left: auto;
+      background: rgba(62,184,160,0.1);
+      border: 1px solid #1e5c52;
+      color: #3eb8a0;
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+<div class="custom-header">
+  <div class="custom-header-inner">
+    <div class="logo">⭐</div>
+    <div>
+      <div class="header-title">OLAP Intelligence Platform</div>
+      <div class="header-sub">Multi-Agent BI System — API Documentation</div>
+    </div>
+    <div class="header-badge">v1.0.0</div>
+  </div>
+</div>
+
+<div id="swagger-ui"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.js"></script>
+<script>
+const spec = {
+  openapi: "3.0.0",
+  info: {
+    title: "OLAP Intelligence Platform API",
+    version: "1.0.0",
+    description: `## Multi-Agent Business Intelligence System
+
+A FastAPI backend that routes natural language queries through 6 specialized AI agents to perform OLAP analysis on a global retail sales dataset.
+
+### Agents
+| Agent | Operations |
+|-------|-----------|
+| **DimensionNavigator** | drill_down, roll_up, group |
+| **CubeOperations** | slice, dice, pivot, drill_through |
+| **KPICalculator** | yoy_growth, mom_change, compare_periods, top_n, profit_margins |
+| **ReportGenerator** | executive_summary, trend_report, format_table |
+| **Visualization** | visualize (Plotly chart config) |
+| **AnomalyDetection** | monthly_anomaly, product_anomaly |
+
+### Dataset
+- **10,000** retail transactions
+- **Period:** January 2022 – December 2024
+- **Regions:** North America, Europe, Asia Pacific, Latin America
+- **Categories:** Electronics, Furniture, Office Supplies, Clothing
+`
+  },
+  servers: [
+    { url: "http://localhost:8000", description: "Local development server" }
+  ],
+  tags: [
+    { name: "Core", description: "Health and root endpoints" },
+    { name: "Chat", description: "Natural language OLAP analysis" },
+    { name: "Agents", description: "Direct agent invocation" },
+    { name: "Dashboard", description: "Pre-computed analytics for the frontend dashboard" },
+    { name: "Schema", description: "Data model metadata" }
+  ],
+  paths: {
+    "/": {
+      get: {
+        tags: ["Core"],
+        summary: "Root",
+        description: "Check if the API is running.",
+        responses: {
+          "200": {
+            description: "API status",
+            content: { "application/json": { example: { status: "running", service: "OLAP Multi-Agent BI Platform" } } }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      get: {
+        tags: ["Core"],
+        summary: "Health Check",
+        description: "Returns API health status and total record count in the database.",
+        responses: {
+          "200": {
+            description: "Healthy response",
+            content: { "application/json": { example: { status: "healthy", records: 10000 } } }
+          },
+          "500": { description: "Database error" }
+        }
+      }
+    },
+    "/api/chat": {
+      post: {
+        tags: ["Chat"],
+        summary: "Natural Language Query",
+        description: `Send a natural language business question. The orchestrator parses the intent, selects appropriate agents, executes the analysis, and returns a narrative response with data.
+
+**Example queries:**
+- "Total revenue by region"
+- "Compare 2023 vs 2024 by category"
+- "Top 5 countries by profit"
+- "Drill down Q4 2024 by month"
+- "Detect revenue anomalies"
+- "Electronics sales in Europe"`,
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["query"],
+                properties: {
+                  query: { type: "string", description: "Natural language business question", example: "Compare 2023 vs 2024 revenue by region" },
+                  reset_context: { type: "boolean", description: "Clear conversation history before processing", default: false }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Analysis result",
+            content: {
+              "application/json": {
+                example: {
+                  narrative: "Comparing 2023 vs 2024 revenue by region shows strong growth across all markets. Asia Pacific led with 12.3% YoY growth...",
+                  agents_used: ["KPICalculator", "ReportGenerator"],
+                  outputs: [
+                    {
+                      agent: "KPICalculator",
+                      operation: "compare_periods",
+                      sql: "SELECT g.region, d.year, ROUND(SUM(f.revenue),2) AS revenue FROM fact_sales f JOIN dim_date d ON f.date_key = d.date_key JOIN dim_geography g ON f.geo_key = g.geo_key WHERE d.year IN (2023,2024) GROUP BY g.region, d.year ORDER BY g.region, d.year",
+                      data: [
+                        { region: "Asia Pacific", year: 2023, revenue: 4821043.50 },
+                        { region: "Asia Pacific", year: 2024, revenue: 5012384.20 }
+                      ],
+                      summary: "YoY comparison complete. Asia Pacific shows highest growth at 12.3%.",
+                      row_count: 8
+                    }
+                  ],
+                  follow_up_suggestions: ["Which product category drove Asia Pacific growth?", "Break down by country within Asia Pacific", "Compare Q4 specifically"]
+                }
+              }
+            }
+          },
+          "500": { description: "Orchestrator or agent error" }
+        }
+      }
+    },
+    "/api/agent": {
+      post: {
+        tags: ["Agents"],
+        summary: "Direct Agent Call",
+        description: `Invoke a specific agent directly with an explicit operation and parameters. Useful for testing individual agents.
+
+**Available agents and operations:**
+
+| Agent | Operations |
+|-------|-----------|
+| DimensionNavigator | drill_down, roll_up, group |
+| CubeOperations | slice, dice, pivot, drill_through |
+| KPICalculator | yoy_growth, mom_change, compare_periods, top_n, profit_margins, summary |
+| ReportGenerator | executive_summary, trend_report, format_table |
+| Visualization | visualize |
+| AnomalyDetection | monthly_anomaly, product_anomaly |`,
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["agent", "operation"],
+                properties: {
+                  agent: { type: "string", example: "KPICalculator", enum: ["DimensionNavigator","CubeOperations","KPICalculator","ReportGenerator","Visualization","AnomalyDetection"] },
+                  operation: { type: "string", example: "top_n" },
+                  parameters: { type: "object", example: { n: 5, dimension: "country", measure: "profit" } }
+                }
+              },
+              examples: {
+                top_n: { summary: "Top 5 countries by profit", value: { agent: "KPICalculator", operation: "top_n", parameters: { n: 5, dimension: "country", measure: "profit" } } },
+                drill_down: { summary: "Drill down 2024 by quarter", value: { agent: "DimensionNavigator", operation: "drill_down", parameters: { from_level: "year", to_level: "quarter", filters: { year: 2024 } } } },
+                slice: { summary: "Slice to 2024 only", value: { agent: "CubeOperations", operation: "slice", parameters: { dimension: "year", value: 2024 } } },
+                anomaly: { summary: "Detect monthly anomalies", value: { agent: "AnomalyDetection", operation: "monthly_anomaly", parameters: {} } }
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Agent output",
+            content: {
+              "application/json": {
+                example: {
+                  agent: "KPICalculator",
+                  operation: "top_n",
+                  sql: "SELECT g.country, ROUND(SUM(f.profit),2) AS total_profit FROM fact_sales f JOIN dim_geography g ON f.geo_key = g.geo_key GROUP BY g.country ORDER BY total_profit DESC LIMIT 5",
+                  data: [
+                    { country: "Canada", total_profit: 491234.50 },
+                    { country: "United States", total_profit: 478902.30 },
+                    { country: "Germany", total_profit: 421543.80 },
+                    { country: "Australia", total_profit: 398712.10 },
+                    { country: "Japan", total_profit: 371205.90 }
+                  ],
+                  summary: "Top 5 countries by profit. Canada leads with $491K.",
+                  row_count: 5,
+                  error: null
+                }
+              }
+            }
+          },
+          "400": { description: "Unknown agent name" },
+          "500": { description: "Agent execution error" }
+        }
+      }
+    },
+    "/api/schema": {
+      get: {
+        tags: ["Schema"],
+        summary: "Star Schema Metadata",
+        description: "Returns the full dimensional model metadata including hierarchies, dimension values, and available measures.",
+        responses: {
+          "200": {
+            description: "Schema metadata",
+            content: {
+              "application/json": {
+                example: {
+                  dimensions: {
+                    time: { hierarchy: ["year","quarter","month"], values: { year: [2022,2023,2024], quarter: ["Q1","Q2","Q3","Q4"] } },
+                    geography: { hierarchy: ["region","country"], values: { region: ["North America","Europe","Asia Pacific","Latin America"] } },
+                    product: { hierarchy: ["category","subcategory"], values: { category: ["Electronics","Furniture","Office Supplies","Clothing"] } },
+                    customer: { hierarchy: ["customer_segment"], values: { customer_segment: ["Consumer","Corporate","Home Office"] } }
+                  },
+                  measures: ["quantity","unit_price","revenue","cost","profit","profit_margin"],
+                  fact_table: "fact_sales"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quick-stats": {
+      get: {
+        tags: ["Dashboard"],
+        summary: "Headline KPIs",
+        description: "Returns headline KPI figures for the executive dashboard: total transactions, revenue, profit, average margin, and average order value.",
+        responses: {
+          "200": {
+            description: "KPI summary",
+            content: {
+              "application/json": {
+                example: {
+                  total_transactions: 10000,
+                  total_revenue: 19847321.50,
+                  total_profit: 7802145.30,
+                  avg_margin: 39.31,
+                  avg_order_value: 1984.73
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/revenue-by-region": {
+      get: {
+        tags: ["Dashboard"],
+        summary: "Revenue by Region",
+        description: "Returns total revenue, profit, and average margin grouped by geographic region. Used to power the regional bar chart on the dashboard.",
+        responses: {
+          "200": {
+            description: "Regional breakdown",
+            content: {
+              "application/json": {
+                example: [
+                  { region: "Asia Pacific", total_revenue: 5012384.20, total_profit: 1968432.10, avg_margin: 39.27 },
+                  { region: "North America", total_revenue: 4987210.30, total_profit: 1942310.50, avg_margin: 38.95 },
+                  { region: "Europe", total_revenue: 4821043.50, total_profit: 1893201.80, avg_margin: 39.27 },
+                  { region: "Latin America", total_revenue: 5026683.50, total_profit: 1998201.90, avg_margin: 39.75 }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/revenue-by-year": {
+      get: {
+        tags: ["Dashboard"],
+        summary: "Revenue by Year",
+        description: "Returns total revenue and profit grouped by year. Used for the year-over-year trend chart.",
+        responses: {
+          "200": {
+            description: "Annual breakdown",
+            content: {
+              "application/json": {
+                example: [
+                  { year: 2022, total_revenue: 6234108.40, total_profit: 2450321.10 },
+                  { year: 2023, total_revenue: 6598432.50, total_profit: 2591204.30 },
+                  { year: 2024, total_revenue: 7014780.60, total_profit: 2760619.90 }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/revenue-by-category": {
+      get: {
+        tags: ["Dashboard"],
+        summary: "Revenue by Category",
+        description: "Returns total revenue and average profit margin grouped by product category.",
+        responses: {
+          "200": {
+            description: "Category breakdown",
+            content: {
+              "application/json": {
+                example: [
+                  { category: "Electronics", total_revenue: 5921043.20, avg_margin: 41.20 },
+                  { category: "Furniture", total_revenue: 5234108.40, avg_margin: 38.50 },
+                  { category: "Clothing", total_revenue: 4821043.50, avg_margin: 39.10 },
+                  { category: "Office Supplies", total_revenue: 3871126.40, avg_margin: 38.44 }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+SwaggerUIBundle({
+  spec: spec,
+  dom_id: '#swagger-ui',
+  deepLinking: true,
+  presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+  plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+  layout: "StandaloneLayout",
+  tryItOutEnabled: false,
+  syntaxHighlight: { activated: true, theme: "monokai" }
+});
+</script>
+</body>
+</html>
