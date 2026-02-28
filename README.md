@@ -33,7 +33,11 @@ python .\launch.py
 ```
 ## After that run the index.html file, if you run just the python file and add to the URL /docs you can find the APIs docs
 
+## The first run will take a while to run
 
+## The extra folder contains some HTML pages with extra information about the project
+
+## Longer steps to open the project step by step
 
 ### 1. Clone / open the project
 
@@ -80,9 +84,6 @@ python -m http.server 3000 --directory frontend
 Then visit `http://localhost:3000`.
 
 ---
-```
-The extra folder contains some HTML pages with extra information about the project
-```
 ## Project Structure
 
 ```
